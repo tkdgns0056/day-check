@@ -25,7 +25,7 @@ const ScheduleList = ({ schedules, setSchedules }) => {
                         onChange={() => toggleComplete(schedule.id)}
                         className="schedule-checkbox"
                     />
-                    <spen className="schedule-text">{schedule.title}</spen>
+                    <span className="schedule-text">{schedule.content}</span>
                     <button className="delete-button" onClick={() => handleDelete(schedule.id)}>
                         🗑️
                     </button>

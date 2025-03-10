@@ -1,124 +1,524 @@
+/* 기본 컨테이너 스타일 */
 .home-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  text-align: center;
   width: 100%;
-  max-width: 500px; /* 전체 크기 조정 */
+  max-width: 600px;
   margin: 0 auto;
-  padding: 20px;
-}
-
-.date-header {
-  font-size: 20px;
-  font-weight: bold;
+  padding: 24px 16px;
   color: #333;
-  margin-bottom: 10px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
+/* 날짜 네비게이션 */
+.date-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  width: 100%;
+  gap: 12px;
+}
+
+.date-button {
+  background-color: transparent;
+  border: none;
+  color: #0066ff;
+  font-size: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.date-button:hover {
+  background-color: rgba(0, 102, 255, 0.1);
+}
+
+.date-display {
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background-color: #f5f7fa;
+  color: #333;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-display:hover {
+  background-color: #e9ecef;
+}
+
+/* 캘린더 컨테이너 */
+.calendar-container {
+  width: 100%;
+  margin-bottom: 24px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  background-color: white;
+  z-index: 10;
+}
+
+/* 버튼 영역 */
+.action-buttons {
+  width: 100%;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.main-actions {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* 일정 추가 버튼 */
+.add-button {
+  background-color: #0066ff;
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
+  box-shadow: 0 4px 6px rgba(0, 102, 255, 0.2);
+  width: 100%;
+  max-width: 300px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.add-button::before {
+  content: "+";
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.add-button:hover {
+  background-color: #0052cc;
+  transform: translateY(-2px);
+}
+
+/* 반복 일정 관리 버튼 */
+.recurring-manage-button {
+  background-color: #f5f7fa;
+  color: #555;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.recurring-manage-button:hover {
+  background-color: #e9ecef;
+  transform: translateY(-1px);
+}
+
+/* 일정 입력 컨테이너 */
+.schedule-input-container {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background-color: white;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* 일정 제목 입력 */
+.schedule-input {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 16px;
+  border: 1px solid #dfe1e5;
+  border-radius: 12px;
+  outline: none;
+  transition: border 0.2s;
+}
+
+.schedule-input:focus {
+  border-color: #0066ff;
+  box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2);
+}
+
+/* 우선순위 선택 */
+.priority-select {
+  padding: 12px 16px;
+  border: 1px solid #dfe1e5;
+  border-radius: 12px;
+  font-size: 15px;
+  background-color: white;
+  cursor: pointer;
+  outline: none;
+  transition: border 0.2s;
+  width: 100%;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 12px;
+}
+
+.priority-select:focus {
+  border-color: #0066ff;
+  box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2);
+}
+
+/* 토글 버튼 공통 스타일 */
+.toggle-button {
+  background-color: #f5f7fa;
+  color: #555;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toggle-button:hover {
+  background-color: #e9ecef;
+}
+
+.toggle-button::before {
+  font-size: 16px;
+}
+
+.time-toggle-btn::before {
+  content: "🕒";
+}
+
+.description-toggle-btn::before {
+  content: "📝";
+}
+
+/* 토글 컨테이너 */
+.toggle-container {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* 시간 입력 영역 */
+.time-input-container {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  background-color: #f5f7fa;
+  padding: 16px;
+  border-radius: 12px;
+}
+
+.time-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.time-field label {
+  font-size: 14px;
+  color: #555;
+  font-weight: 500;
+}
+
+.time-input {
+  padding: 10px 12px;
+  border: 1px solid #dfe1e5;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  background-color: white;
+}
+
+.time-input:focus {
+  border-color: #0066ff;
+  box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2);
+}
+
+/* 설명 입력 영역 */
+.description-input-container {
+  width: 100%;
+}
+
+.description-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #dfe1e5;
+  border-radius: 12px;
+  font-size: 14px;
+  min-height: 100px;
+  outline: none;
+  resize: vertical;
+  transition: border 0.2s;
+}
+
+.description-textarea:focus {
+  border-color: #0066ff;
+  box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2);
+}
+
+/* 입력 버튼 */
+.input-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.cancel-button {
+  background-color: #f5f7fa;
+  color: #555;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-button:hover {
+  background-color: #e9ecef;
+}
+
+.submit-button {
+  background-color: #0066ff;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 24px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.submit-button:hover {
+  background-color: #0052cc;
+  transform: translateY(-1px);
+}
+
+/* 일정 목록 */
 .schedule-list {
   width: 100%;
-  max-width: 400px;
-  margin-top: 20px;
-  background: #fff;
-  padding: 15px;
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background-color: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  list-style-type: none;
 }
 
 .schedule-item {
-  padding: 10px;
-  border-bottom: 1px solid #ddd;
-  font-size: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+  cursor: pointer;
 }
 
 .schedule-item:last-child {
   border-bottom: none;
 }
 
-/* 일정 추가 버튼 */
-.add-button {
-  background-color: #007bff;
-  color: white;
-  font-size: 16px;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 20px;
+.schedule-item:hover {
+  background-color: #f5f7fa;
+}
+
+.schedule-content {
+  flex: 1;
+  margin: 0 12px;
+  font-size: 15px;
+  color: #333;
+}
+
+/* 우선순위 색상 */
+.priority-high {
+  border-left: 4px solid #ff3b30;
+}
+
+.priority-medium {
+  border-left: 4px solid #ffcc00;
+}
+
+.priority-low {
+  border-left: 4px solid #34c759;
+}
+
+/* 체크박스 스타일 */
+.schedule-item input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #0066ff;
+  margin-right: 12px;
   cursor: pointer;
-  transition: background 0.2s ease-in-out;
-  margin-top: 15px;
 }
 
-.add-button:hover {
-  background-color: #0056b3;
+/* 완료된 일정 */
+.schedule-item.completed {
+  background-color: #f5f7fa;
 }
 
-/* 일정 입력창 컨테이너 */
-.schedule-input-container {
+.schedule-item.completed .schedule-content {
+  text-decoration: line-through;
+  color: #888;
+}
+
+/* 버튼 그룹 */
+.button-group {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 15px;
-  width: 100%;
-}
-
-/* 입력 필드 */
-.schedule-input-container input {
-  width: 70%;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 15px;
-  font-size: 16px;
-  outline: none;
-}
-
-/* 등록 버튼 */
-.schedule-input-container button {
-  background-color: #28a745;
-  color: white;
-  border: none;
-  padding: 8px 15px;
-  font-size: 14px;
-  border-radius: 15px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.schedule-input-container button:hover {
-  background-color: #218838;
-}
-
-/* 날짜 이전 이후 버튼 css*/
-.date-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 15px;
   gap: 10px;
 }
 
-.date-button {
+.button-group button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #555;
+}
+
+.button-group button:hover {
   background-color: #f0f0f0;
-  border: none;
-  padding: 8px 12px;
-  font-size: 18px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.2s ease-in-out;
-  border-radius: 5px;
+  color: #0066ff;
 }
 
-.date-button:hover {
-  background-color: #ddd;
+/* 설명 아이콘 */
+.has-description-icon {
+  margin-left: 6px;
+  font-size: 14px;
+  color: #0066ff;
 }
 
-.date-display {
-  font-size: 18px;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
+/* 설명 표시 영역 */
+.schedule-description {
+  margin-top: 8px;
+  padding: 12px 16px;
+  background-color: #f5f7fa;
+  border-radius: 12px;
+  margin-left: 32px;
+  margin-right: 8px;
+  font-size: 14px;
+  color: #555;
+  line-height: 1.5;
+}
+
+/* 반복 일정 표시 */
+.recurring-indicator {
+  display: inline-flex;
   align-items: center;
-  gap: 5px;
+  margin-left: 8px;
+  background-color: #e9f5ff;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+.recurring-pattern {
+  color: #0066ff;
+  margin-left: 4px;
+  font-weight: 500;
+}
+
+/* 편집 입력 필드 */
+.edit-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #dfe1e5;
+  border-radius: 12px;
+  font-size: 15px;
+  outline: none;
+  margin-right: 12px;
+}
+
+.edit-input:focus {
+  border-color: #0066ff;
+  box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2);
+}
+
+/* 모바일 반응형 */
+@media (max-width: 480px) {
+  .home-container {
+    padding: 16px 12px;
+  }
+
+  .schedule-input-container {
+    padding: 16px;
+  }
+
+  .toggle-container {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .time-toggle-btn, .description-toggle-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .time-input-container {
+    flex-direction: column;
+  }
+
+  .input-buttons {
+    margin-top: 16px;
+    width: 100%;
+  }
+
+  .cancel-button, .submit-button {
+    flex: 1;
+    justify-content: center;
+    display: flex;
+  }
+}
+
+/* time-display 스타일 */
+.time-display {
+  color: #666;
+  font-size: 0.8em;
+  margin-left: 8px;
+  white-space: nowrap;
 }
