@@ -6,38 +6,54 @@ import "../styles/Home.css";
 import "../styles/RecurringSchedule.css";
 import "../styles/RecurringManager.css";
 import RecurringScheduleManager from "./RecurringScheduleManager";
+import NotificationComponent from "../components/NotificationComponent";
 import axios from "axios";
 
 const Home = () => {
+  // 날짜 관련
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
+
+  //일정 관련
   const [schedules, setSchedules] = useState([]);
   const [newSchedule, setNewSchedule] = useState("");
   const [newPriority, setNewPriority] = useState("medium");
+
+  // 편집 모드 관련
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editedText, setEditedText] = useState("");
   const [editedPriority, setEditedPriority] = useState("medium");
+  
+  //추가 기능 토글 관련
   const [showRecurringManager, setShowRecurringManager] = useState(false);
   const [showDescription, setShowDescription] = useState(false);
   const [newDescription, setNewDescription] = useState("");
+
+  // 시간 관련
   const [expandedScheduleId, setExpandedScheduleId] = useState(null);
   const [startTime, setStartTime] = useState("09:00"); // 기본값 9시
   const [endTime, setEndTime] = useState("10:00");   // 기본값 10시
   const [showTimeInputs, setShowTimeInputs] = useState(false); // 시간 입력 표시 여부
 
+  // 알림 관련 상태 추가
+  const [activeNotification, setActiveNotification] = useState(null);
+  const [notificationBefore, setNotificationBefore] = useState(15); // 기본값 15분
+  const [showNotificationOptions, setShowNotificationOptions] = useState(false);
+
+
   // 우선순위 라벨 변환 함수
-  const getPriorityLabel = (priority) => {
-    switch(priority) {
-      case "high": return "높음";
-      case "medium": return "중간";
-      case "low": return "낮음";
-      default: return "중간";
-    }
-  };
+  // const getPriorityLabel = (priority) => {
+  //   switch(priority) {
+  //     case "high": return "높음";
+  //     case "medium": return "중간";
+  //     case "low": return "낮음";
+  //     default: return "중간";
+  //   }
+  // };
 
   // 우선순위 가중치 부여 함수 (정렬용)
-  const getPriorityWeight = (priority) => {
+  const getPriorityWeight = (priority) => { 
     switch(priority) {
       case "high": return 1;
       case "medium": return 2;
@@ -112,6 +128,26 @@ const Home = () => {
 
   const formattedDate = selectedDate.toISOString().split("T")[0];
 
+  // 알림 수신 이벤트 처리
+  useEffect(() => {
+    // 알림 이벤트 리스너 등록
+    const handleNotification = (event) => {
+      const notification = event.detail;
+      setActiveNotification(notification);
+      
+      // 일정 시간 후 토스트 자동 닫기
+      setTimeout(() => {
+        setActiveNotification(null);
+      }, 5000);
+    };
+    
+    window.addEventListener('notification', handleNotification);
+    
+    return () => {
+      window.removeEventListener('notification', handleNotification);
+    };
+  }, []);
+
   useEffect(() => {
     loadSchedules();
   }, [formattedDate]);
@@ -159,6 +195,7 @@ const Home = () => {
       endDate: endDateStr,
       priority: newPriority,
       description: newDescription,
+      notificationBefore: notificationBefore, // 알림 시간 설정 추가
       completed: false
     })
     .then(response => {
@@ -168,6 +205,8 @@ const Home = () => {
       setNewDescription("");
       setShowDescription(false);
       setShowTimeInputs(false);
+      setShowNotificationOptions(false); // 알림 옵션 숨기기
+      setNotificationBefore(15); // 기본값으로 초기화
       setStartTime("09:00"); // 기본값으로 초기화
       setEndTime("10:00");
       setIsAdding(false);
@@ -270,6 +309,9 @@ const Home = () => {
   return (
     <div>
       <Header />
+      <div className="notification-wrapper">
+        <NotificationComponent />
+      </div>
       <div className="home-container">
         <div className="date-container">
           <button onClick={handlePrevDate} className="date-button">{"<"}</button>
@@ -322,6 +364,14 @@ const Home = () => {
                   
                   <button 
                     type="button"
+                    onClick={() => setShowNotificationOptions(!showNotificationOptions)}
+                    className="toggle-button notification-toggle-btn"
+                  >
+                    {showNotificationOptions ? '알림 접기' : '알림 설정'}
+                  </button>
+                  
+                  <button 
+                    type="button"
                     onClick={() => setShowDescription(!showDescription)}
                     className="toggle-button description-toggle-btn"
                   >
@@ -350,6 +400,27 @@ const Home = () => {
                         className="time-input"
                       />
                     </div>
+                  </div>
+                )}
+                
+                {/* 알림 설정 옵션 (토글됨) */}
+                {showNotificationOptions && (
+                  <div className="notification-options-container">
+                    <label>일정 시작 전 알림:</label>
+                    <select
+                      value={notificationBefore}
+                      onChange={(e) => setNotificationBefore(Number(e.target.value))}
+                      className="notification-select"
+                    >
+                      <option value={5}>5분 전</option>
+                      <option value={10}>10분 전</option>
+                      <option value={15}>15분 전</option>
+                      <option value={30}>30분 전</option>
+                      <option value={60}>1시간 전</option>
+                    </select>
+                    <p className="notification-info">
+                      * 설정한 시간 전에 알림을 받고, 일정 시작 시간에도 알림을 받습니다.
+                    </p>
                   </div>
                 )}
                 
@@ -499,6 +570,19 @@ const Home = () => {
           />
         )}
       </div>
+      
+      {/* 토스트 알림 */}
+      {activeNotification && (
+        <div className="notification-toast">
+          <div className="notification-toast-header">
+            <h4 className="notification-toast-title">📅 일정 알림</h4>
+            <button onClick={() => setActiveNotification(null)} className="close-button">×</button>
+          </div>
+          <div className="notification-toast-body">
+            {activeNotification.message}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
