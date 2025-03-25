@@ -1,8 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from '../pages/Home';
 import Login from '../pages/Login';
-import Scheduler from '../pages//Scheduler';
-
+import Register from "../pages/Register";
+import VerifyEmail from "../pages/VerifyEmail";
 
 const AppRouter = () => {
     return (
@@ -10,7 +10,8 @@ const AppRouter = () => {
             <Routes>
                 <Route path ="/"  element={<Home />} />
                 <Route path ="/login" element={<Login />} />
-                <Route path = "/scheduler" element={<Scheduler />} />
+                <Route path="/register" element={<Register/>} />
+                <Route path="/verify-email" element={<VerifyEmail/>}/>
             </Routes>
         </Router>
     );
