@@ -82,7 +82,7 @@ const Register = () => {
             ...formErrors,
             email: emailError
         });
-        setErrorMessage(errorMessage);
+        setErrorMessage(emailError);
         return;
     }
 
@@ -225,7 +225,7 @@ const Register = () => {
     
     if(!isValid){
         // 첫 번째 발견된 에러 메시지를 표시
-        for(const key in erros){
+        for(const key in errors){
             if(errors[key]){
                 setErrorMessage(errors[key]);
                 break;
@@ -255,7 +255,7 @@ const Register = () => {
         name: formData.name
       });
       
-      if(response.data & response.data.success) {
+      if(response.data && response.data.success) {
         setSuccessMessage(response.data.message || '회원가입이 완료되었습니다. 로그인 페이지로 이동합니다.');
       
 
@@ -279,7 +279,7 @@ const Register = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }; // handleSubmit end
 
   // 인증 코드 재발송 핸들러
   const handleResendCode = () => {
