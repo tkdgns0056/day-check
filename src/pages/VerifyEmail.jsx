@@ -53,25 +53,30 @@ const VerifyEmail = () => {
         <div className="auth-form-container">
           <h2>이메일 인증</h2>
           
-          {verificationStatus.loading ? (
-            <div className="loading-message">인증 확인 중입니다...</div>
-          ) : (
-            <div className={verificationStatus.success ? 'success-message' : 'error-message'}>
-              <p>{verificationStatus.message}</p>
-              
-              {verificationStatus.success ? (
-                <div className="auth-links">
-                  <Link to="/login" className="auth-button">로그인 페이지로 이동</Link>
-                </div>
-              ) : (
-                <div className="auth-links">
-                  <p>
-                    <Link to="/">홈으로 돌아가기</Link>
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
+          <div className="verification-content">
+            {verificationStatus.loading ? (
+              <div className="loading-message">
+                <p>인증 확인 중입니다...</p>
+                <div className="spinner"></div>
+              </div>
+            ) : (
+              <div className={`verification-result ${verificationStatus.success ? 'success' : 'error'}`}>
+                <p>{verificationStatus.message}</p>
+                
+                {verificationStatus.success ? (
+                  <Link to="/login" className="auth-button">
+                    로그인 페이지로 이동
+                  </Link>
+                ) : (
+                  <div className="auth-links">
+                    <Link to="/" className="auth-link">
+                      홈으로 돌아가기
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
