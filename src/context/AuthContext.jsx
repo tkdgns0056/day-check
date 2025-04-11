@@ -117,11 +117,29 @@ export const AuthProvider = ({ children }) => {
           password,
           name
         });
+<<<<<<< HEAD
         
         return {
           success: true,
           message: '회원가입이 완료되었습니다. 로그인해주세요.'
         };
+=======
+
+        // response.data 제대로 확인
+        console.log("성공 응답:", response.data);
+
+        // 응답 구조 확인 후 적절히 처리
+        if(response.data && response.data.success){
+          return {
+            success: true,
+            message : response.data.message || '회원가입이 완료되었습니다.'
+          };
+        } else {
+          // 응답이 success: true가 아니라면 오류로 처리
+           throw new Error('서버 응답이 성공 형식이 아닙니다.');
+        }
+
+>>>>>>> d15d25888ceace5fdeac525d50e4639bc1d62d98
       } catch (err) {
         console.error("회원가입 오류:", err);
         let errorMessage = '회원가입 중 오류가 발생했습니다.';
