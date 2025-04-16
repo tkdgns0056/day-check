@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         
         // 사용자 정보 요청
-        const response = await axios.get('http://localhost:8080/api/users/me');
+        const response = await axios.get('http://localhost:8080/api/members/me');
         setCurrentUser(response.data);
       } catch (err) {
         // 토큰이 유효하지 않으면 로그아웃
@@ -41,24 +41,40 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password) => {
       try {
         setError(null);
+        setLoading(true);
+
         const response = await axios.post('http://localhost:8080/api/auth/login', {
           email,
           password
         });
-  
-        const { accessToken, refreshToken } = response.data;
-        
-        // 토큰 저장
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', refreshToken);
-        
-        // 토큰 헤더 설정
-        axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-        
-        // 사용자 정보 가져오기
-        await fetchUserData(accessToken);
-        
-        return true;
+
+          console.log('로그인 응답:', response.data); // 디버깅을 위한 응답 로깅
+    
+          
+          const responseData = response.data;
+
+          // 응답 구조 유연하게 처리(중첩 구조와 평면 구조 모두 지원)
+          const tokenData =responseData.data || responseData;
+
+          //응답 구조 확인
+          if(tokenData.accessToken && tokenData.refreshToken){
+              //응답 형식이 {success: true, data: {accessToken, refreshToken, ...}}
+              const { accessToken, refreshToken } = tokenData;
+      
+            // 토큰 저장
+            localStorage.setItem('accessToken', accessToken);
+            localStorage.setItem('refreshToken', refreshToken);
+            
+            // 토큰 헤더 설정
+            axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+            
+            // 사용자 정보 가져오기
+            await fetchUserData(accessToken);
+            
+            return true;
+        } else {
+          throw new Error('서버 응답 형식이 잘못되었습니다.');
+        }
       } catch (err) {
         let errorMessage = '로그인 중 오류가 발생했습니다.';
         
@@ -75,6 +91,8 @@ export const AuthProvider = ({ children }) => {
         
         setError(errorMessage);
         return false;
+      } finally {
+        setLoading(false);
       }
     };
   
