@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import Header from "../components/Header";
@@ -6,6 +6,7 @@ import "../styles/Home.css";
 import "../styles/RecurringSchedule.css";
 import "../styles/RecurringManager.css";
 import RecurringScheduleManager from "./RecurringScheduleManager";
+import { debounce } from "lodash";
 import axios from "axios";
 
 const Home = () => {
@@ -34,6 +35,12 @@ const Home = () => {
   const [startTime, setStartTime] = useState("09:00"); // 기본값 9시
   const [endTime, setEndTime] = useState("10:00");   // 기본값 10시
   const [showTimeInputs, setShowTimeInputs] = useState(false); // 시간 입력 표시 여부
+
+  // 날짜까 변경되거나 컴포넌트가 마운트 될 때 알정 로드
+  useEffect(() => {
+    console.log("날짜 변경 감지:", formattedDate);
+    loadSchedules();
+  }, [selectedDate]); // selectedDate가 변경 될 때마다 실행
 
   // 우선순위 가중치 부여 함수 (정렬용)
   const getPriorityWeight = (priority) => { 
@@ -113,14 +120,28 @@ const Home = () => {
 
 
   const loadSchedules = () => {
-    axios.get(`http://localhost:8080/api/schedules/${formattedDate}`)
+    // 토큰 가져오기
+    const token = localStorage.getItem('accessToken');
+
+    // 토큰이 있을 경우만 요청에 포함
+    if(token){
+      axios.get(`http://localhost:8080/api/schedules/${formattedDate}`, {
+        headers: {
+          'Authorization' : `Bearer ${token}`
+        }
+      })
       .then(response => {
-        // 받아온 데이터를 우선순위에 따라 정렬
+        console.log('받아온 데이터:', response.data); // 디버깅용
         setSchedules(sortSchedules(response.data));
       })
-      .catch(error => console.log(error));
+      .catch(error => {
+        console.error('일정 로드 오류:', error);
+      });
+    } else {
+      console.error('인증 토큰이 없습니다.');
+    }
   };
-
+  
   // 일반 일정 등록
   const handleAddSchedule = () => {
     if (newSchedule.trim() === "") return;
@@ -221,19 +242,74 @@ const Home = () => {
     // 이벤트 전파 중지 (설명 토글과 충돌 방지)
     e.stopPropagation();
     
-    // 완료 상태 토글을 위한 별도 엔드포인트 호출
-    axios.patch(`http://localhost:8080/api/schedules/${id}/complete`)
-      .then(response => {
-        const updatedSchedules = schedules.map(schedule =>
-          schedule.id === id ? response.data : schedule
-        );
-        // 완료 상태 변경 후 다시 정렬
-        setSchedules(sortSchedules(updatedSchedules));
-      })
-      .catch(error => {
-        console.log("토글 오류: ", error);
-      });
+    // 낙관적 업데이트( 먼저 UI 상태 변경 )
+    const updatedSchedules = schedules.map(schedule => 
+      schedule.id === id 
+          ? { ...schedule, completed: !schedule.completed }
+          : schedule
+    );
+    setSchedules(updatedSchedules);
+
+    debouncedUpdateComplete(id);
   };
+
+  // 디바운스 함수 생성
+  const debouncedUpdateComplete = useCallback(
+    debounce((id) => {
+
+      // 토큰 가져오기
+      const token = localStorage.getItem('accessToken');
+
+      axios.patch(`http://localhost:8080/api/schedules/${id}/complete`,
+        {},
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      )
+        .then(response => {
+          console.log('완료 상태 변경 응답:', response);
+          // 서버 응답 후 최종 상태 확정
+          const updatedSchedules = schedules.map(schedule =>
+                schedule.id === id ? response.data : schedule
+          );
+          setSchedules(sortSchedules(updatedSchedules));
+        })
+        .catch(error => {
+          
+          console.error("토글 오류 전체 정보: ", error);
+          console.error("에러 응답:", error.response);
+          console.error("에러 요청:", error.request);
+          console.error("에러 메시지:", error.message);
+
+          setSchedules(prevScheules => 
+            prevScheules.map(schedule =>
+                schedule.id === id
+                    ? { ...schedule, completed: !schedule.completed }
+                    : schedule
+              )
+            );
+            alert("일정 상태 변경에 실패했습니다. 다시 시도해주세요.");
+        });
+    }, 300),
+    [schedules]
+  );
+
+  //   // 완료 상태 토글을 위한 별도 엔드포인트 호출
+  //   axios.patch(`http://localhost:8080/api/schedules/${id}/complete`)
+  //     .then(response => {
+  //       const updatedSchedules = schedules.map(schedule =>
+  //         schedule.id === id ? response.data : schedule
+  //       );
+  //       // 완료 상태 변경 후 다시 정렬
+  //       setSchedules(sortSchedules(updatedSchedules));
+  //     })
+  //     .catch(error => {
+  //       console.log("토글 오류: ", error);
+  //     });
+  // };
 
   // 우선순위별 아이콘
   const getPriorityIcon = (priority) => {

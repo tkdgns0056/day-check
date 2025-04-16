@@ -16,6 +16,9 @@ export const AuthProvider = ({ children }) => {
         // 토큰이 있으면 사용자 정보 가져오기
         fetchUserData(token);
       } else {
+        // 토큰이 없으면 명시적으로 상태 초기화
+        setCurrentUser(null);
+        setError(null);
         setLoading(false);
       }
     }, []);
@@ -39,9 +42,13 @@ export const AuthProvider = ({ children }) => {
       }
     };
   
+    // 로그인인
     const login = async (email, password) => {
       try {
-        setError(null);
+        // 기존 실패 상태 초기화
+        setError(null); // 이 부분 중요
+        setLoading(true);
+
         // 백엔드 로그인 API 호출
         const response = await axios.post('http://localhost:8080/api/auth/login', {
           email,
@@ -64,8 +71,8 @@ export const AuthProvider = ({ children }) => {
         
         // 사용자 정보 가져오기
         await fetchUserData(data.accessToken);
-        
         return true;
+
       } catch (err) {
         console.error("로그인 오류:", err);
         let errorMessage = '로그인 중 오류가 발생했습니다.';
@@ -82,7 +89,11 @@ export const AuthProvider = ({ children }) => {
           }
         }
         
+        // 오류 상태 설정
         setError(errorMessage);
+        // 로딩 상태 초기화
+        setLoading(false);
+
         return false;
       }
     };
@@ -117,13 +128,6 @@ export const AuthProvider = ({ children }) => {
           password,
           name
         });
-<<<<<<< HEAD
-        
-        return {
-          success: true,
-          message: '회원가입이 완료되었습니다. 로그인해주세요.'
-        };
-=======
 
         // response.data 제대로 확인
         console.log("성공 응답:", response.data);
@@ -139,7 +143,6 @@ export const AuthProvider = ({ children }) => {
            throw new Error('서버 응답이 성공 형식이 아닙니다.');
         }
 
->>>>>>> d15d25888ceace5fdeac525d50e4639bc1d62d98
       } catch (err) {
         console.error("회원가입 오류:", err);
         let errorMessage = '회원가입 중 오류가 발생했습니다.';
@@ -206,6 +209,10 @@ export const AuthProvider = ({ children }) => {
       
       // 사용자 정보 초기화
       setCurrentUser(null);
+
+      // 오류 상태 명시적 초기화
+      setError(null);
+      setLoading(false);
     };
   
     const refreshToken = async () => {
