@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import Header from "../components/Header";
@@ -10,6 +10,14 @@ const Login = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { login, error, setError } = useAuth();
     const navigate = useNavigate();
+
+    // 컴포넌트 마운트 시 오류 상태 초기화
+    // 1. 로그인 -> 로그인 에러 -> 뒤로가기 -> 다시 로그인 시 에러메세지 그대로 남는 현상 발생
+    // 위와 같이 만들어서 해결함.
+    useEffect(() => {
+        // 컴포넌트에 진입할 때마다 명시적으로 오류 상태 초기화
+        setError(null);
+    }, []); // 빈 배열: 컴포넌트 마운트 시 한 번만 실행
     
 
     const handleSubmit = async (e) => {
