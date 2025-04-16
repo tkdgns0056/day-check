@@ -27,12 +27,9 @@ export const AuthProvider = ({ children }) => {
       try {
         // 토큰 설정
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        
-<<<<<<< HEAD
-        // 사용자 정보 요청
-=======
+
         // 사용자 정보 요청 - 백엔드 API 경로에 맞게 수정
->>>>>>> 9c65d827214a5e1a72fc68286ed1cf757bbfaf45
+
         const response = await axios.get('http://localhost:8080/api/members/me');
         setCurrentUser(response.data);
       } catch (err) {
@@ -49,22 +46,15 @@ export const AuthProvider = ({ children }) => {
     // 로그인인
     const login = async (email, password) => {
       try {
-<<<<<<< HEAD
-        setError(null);
-        setLoading(true);
-
-=======
         // 기존 실패 상태 초기화
         setError(null); // 이 부분 중요
         setLoading(true);
 
         // 백엔드 로그인 API 호출
->>>>>>> 9c65d827214a5e1a72fc68286ed1cf757bbfaf45
         const response = await axios.post('http://localhost:8080/api/auth/login', {
           email,
           password
         });
-<<<<<<< HEAD
 
           console.log('로그인 응답:', response.data); // 디버깅을 위한 응답 로깅
     
@@ -93,27 +83,6 @@ export const AuthProvider = ({ children }) => {
         } else {
           throw new Error('서버 응답 형식이 잘못되었습니다.');
         }
-=======
-  
-        // 응답 구조에 맞게 수정 (data 필드 안에 있음)
-        const { data } = response.data;
-        
-        if (!data || !data.accessToken) {
-          throw new Error('토큰 정보가 없습니다.');
-        }
-        
-        // 토큰 저장
-        localStorage.setItem('accessToken', data.accessToken);
-        localStorage.setItem('refreshToken', data.refreshToken);
-        
-        // 토큰 헤더 설정
-        axios.defaults.headers.common['Authorization'] = `Bearer ${data.accessToken}`;
-        
-        // 사용자 정보 가져오기
-        await fetchUserData(data.accessToken);
-        return true;
-
->>>>>>> 9c65d827214a5e1a72fc68286ed1cf757bbfaf45
       } catch (err) {
         console.error("로그인 오류:", err);
         let errorMessage = '로그인 중 오류가 발생했습니다.';
