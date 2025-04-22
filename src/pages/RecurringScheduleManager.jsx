@@ -40,7 +40,7 @@ const RecurringScheduleManager = ({ onClose, onUpdate }) => {
         try {
             setLoading(true);
             setError(null);
-            const response = await axios.get('http://localhost:8080/api/schedules/recurring/groups');
+            const response = await axios.get('http://localhost:8080/api/schedules/recurring');
             
             // 불러온 반복 일정 그룹 처리
             setRecurringGroups(response.data);
