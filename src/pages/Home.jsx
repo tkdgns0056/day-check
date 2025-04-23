@@ -6,6 +6,7 @@ import "../styles/Home.css";
 import "../styles/RecurringSchedule.css";
 import "../styles/RecurringManager.css";
 import RecurringScheduleManager from "./RecurringScheduleManager";
+import { getAllRecurringSchedules } from "../services/RecurringScheduleService";
 import { debounce } from "lodash";
 import axios from "axios";
 
@@ -36,7 +37,7 @@ const Home = () => {
   const [endTime, setEndTime] = useState("10:00");   // 기본값 10시
   const [showTimeInputs, setShowTimeInputs] = useState(false); // 시간 입력 표시 여부
 
-  // 날짜까 변경되거나 컴포넌트가 마운트 될 때 알정 로드
+  // 날짜가 변경되거나 컴포넌트가 마운트 될 때 알정 로드
   useEffect(() => {
     console.log("날짜 변경 감지:", formattedDate);
     loadSchedules();
@@ -57,7 +58,8 @@ const Home = () => {
     switch(pattern) {
       case "DAILY": return "매일";
       case "WEEKLY": return "매주";
-      case "WEEKDAY": return "평일";
+      case "MONTHLY": return "매월";
+      case "YEARLY": return "매년";
       default: return "";
     }
   };
@@ -119,28 +121,50 @@ const Home = () => {
   const formattedDate = selectedDate.toISOString().split("T")[0];
 
 
-  const loadSchedules = () => {
-    // 토큰 가져오기
-    const token = localStorage.getItem('accessToken');
+  // 일정 로드 함수 (일반 일정 + 반복 일정)
+  const loadSchedules = async () => {
+    try{
+      // 토큰 가져오기
+      const token = localStorage.getItem('accessToken');
 
-    // 토큰이 있을 경우만 요청에 포함
-    if(token){
-      axios.get(`http://localhost:8080/api/schedules/${formattedDate}`, {
-        headers: {
-          'Authorization' : `Bearer ${token}`
+      // 토큰이 있을 경우만 요청에 포함
+      if(!token){
+        console.error(`인증 토큰이 없습니다.`);
+        return;
+      }
+
+      // 1. 일반 일정 로드
+      const regularSchedulesResponse = await axios.get(
+        `http://localhost:8080/api/schedules/${formattedDate}`,
+        { headers: {'Authorization' : `Bearer ${token}`} }
+      );
+
+      let allSchedules = [...regularSchedulesResponse.data];
+
+      // 2. 반복 일정 로드 (새로운 서비스 함수 사용)
+      try {
+        const recurringSchedulesResponse = await getRecurringSchedulesByDate(formattedDate);
+
+        // 반복 일정을 변환하여 일반 일정과 통합
+        if(recurringSchedulesResponse && recurringSchedulesResponsel.length > 0) {
+          // 반복 일정에는 특별한 구분자 추가 (ex. isRecurring 등)
+          const formattedRecurringSchedules = recurringSchedulesResponse.map(schedule => ({
+            ...schedule,
+            isRecurring : true
+          }));
+
+          allSchedules = [...allSchedules, ...formattedRecurringSchedules];
         }
-      })
-      .then(response => {
-        console.log('받아온 데이터:', response.data); // 디버깅용
-        setSchedules(sortSchedules(response.data));
-      })
-      .catch(error => {
-        console.error('일정 로드 오류:', error);
-      });
-    } else {
-      console.error('인증 토큰이 없습니다.');
+      } catch (recurringError) {
+        console.error('반복 일정 로드 오류:', recurringError);
+      }
+      // 모든 일정 정렬 후 상태 업데이트
+      setSchedules(sortSchedules(allSchedules));
+
+    } catch (error) {
+      console.error('일정 로드 오류:', error);
     }
-  };
+};
   
   // 일반 일정 등록
   const handleAddSchedule = () => {
@@ -241,6 +265,13 @@ const Home = () => {
   const handleToggleComplete = (id, e) => {
     // 이벤트 전파 중지 (설명 토글과 충돌 방지)
     e.stopPropagation();
+
+    // 반복 일정인 경우 완료 상태 변경 불가
+    const schedule = schedules.find(s => s.id === id);
+    if(schedule?.isRecurring) {
+      alert("반복 일정의 완료 상태는 변경 할 수 없습니다. 해당 날짜에 대한 예외를 추가해주세요.");
+      return;
+    }
     
     // 낙관적 업데이트( 먼저 UI 상태 변경 )
     const updatedSchedules = schedules.map(schedule => 
