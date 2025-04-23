@@ -41,8 +41,9 @@ const RecurringScheduleManager = ({ onClose, onUpdate }) => {
         try {
             setLoading(true);
             setError(null);
+
             const response = await getAllRecurringSchedules();
-            
+              
             // 불러온 반복 일정 처리
             setRecurringSchedules(response);
         } catch (err) {
