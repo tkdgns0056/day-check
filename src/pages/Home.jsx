@@ -6,7 +6,7 @@ import "../styles/Home.css";
 import "../styles/RecurringSchedule.css";
 import "../styles/RecurringManager.css";
 import RecurringScheduleManager from "./RecurringScheduleManager";
-import { getAllRecurringSchedules } from "../services/RecurringScheduleService";
+import { getRecurringSchedulesByDate } from "../services/RecurringScheduleService";
 import { debounce } from "lodash";
 import axios from "axios";
 
@@ -122,50 +122,51 @@ const Home = () => {
 
 
   // 일정 로드 함수 (일반 일정 + 반복 일정)
-  const loadSchedules = async () => {
-    try{
-      // 토큰 가져오기
-      const token = localStorage.getItem('accessToken');
+const loadSchedules = async () => {
+  try {
+    // 토큰 가져오기
+    const token = localStorage.getItem('accessToken');
 
-      // 토큰이 있을 경우만 요청에 포함
-      if(!token){
-        console.error(`인증 토큰이 없습니다.`);
-        return;
-      }
-
-      // 1. 일반 일정 로드
-      const regularSchedulesResponse = await axios.get(
-        `http://localhost:8080/api/schedules/${formattedDate}`,
-        { headers: {'Authorization' : `Bearer ${token}`} }
-      );
-
-      let allSchedules = [...regularSchedulesResponse.data];
-
-      // 2. 반복 일정 로드 (새로운 서비스 함수 사용)
-      try {
-        const recurringSchedulesResponse = await getRecurringSchedulesByDate(formattedDate);
-
-        // 반복 일정을 변환하여 일반 일정과 통합
-        if(recurringSchedulesResponse && recurringSchedulesResponsel.length > 0) {
-          // 반복 일정에는 특별한 구분자 추가 (ex. isRecurring 등)
-          const formattedRecurringSchedules = recurringSchedulesResponse.map(schedule => ({
-            ...schedule,
-            isRecurring : true
-          }));
-
-          allSchedules = [...allSchedules, ...formattedRecurringSchedules];
-        }
-      } catch (recurringError) {
-        console.error('반복 일정 로드 오류:', recurringError);
-      }
-      // 모든 일정 정렬 후 상태 업데이트
-      setSchedules(sortSchedules(allSchedules));
-
-    } catch (error) {
-      console.error('일정 로드 오류:', error);
+    // 토큰이 있을 경우만 요청에 포함
+    if (!token) {
+      console.error(`인증 토큰이 없습니다.`);
+      return;
     }
+
+    // 1. 일반 일정 로드
+    const regularSchedulesResponse = await axios.get(
+      `http://localhost:8080/api/schedules/${formattedDate}`,
+      { headers: { 'Authorization': `Bearer ${token}` } }
+    );
+
+    let allSchedules = [...regularSchedulesResponse.data];
+
+    // 2. 반복 일정 로드 - getRecurringSchedulesByDate 함수 사용
+    try {
+      const recurringSchedulesResponse = await getRecurringSchedulesByDate(formattedDate);
+
+      // 반복 일정이 있으면 처리
+      if (recurringSchedulesResponse && recurringSchedulesResponse.length > 0) {
+        // 반복 일정에는 특별한 구분자 추가 (isRecurring)
+        const formattedRecurringSchedules = recurringSchedulesResponse.map(schedule => ({
+          ...schedule,
+          isRecurring: true
+        }));
+
+        // 모든 일정에 추가
+        allSchedules = [...allSchedules, ...formattedRecurringSchedules];
+      }
+    } catch (recurringError) {
+      console.error('반복 일정 로드 오류:', recurringError);
+    }
+
+    // 모든 일정 정렬 후 상태 업데이트
+    setSchedules(sortSchedules(allSchedules));
+
+  } catch (error) {
+    console.error('일정 로드 오류:', error);
+  }
 };
-  
   // 일반 일정 등록
   const handleAddSchedule = () => {
     if (newSchedule.trim() === "") return;
@@ -261,28 +262,28 @@ const Home = () => {
       });
   };
 
-  // 일정 완료 상태 변경을 처리하는 함수 (별도 엔드포인트 사용)
-  const handleToggleComplete = (id, e) => {
-    // 이벤트 전파 중지 (설명 토글과 충돌 방지)
-    e.stopPropagation();
+  // 일정 완료 상태 변경을 처리하는 함수
+const handleToggleComplete = (id, e) => {
+  // 이벤트 전파 중지 (설명 토글과 충돌 방지)
+  e.stopPropagation();
 
-    // 반복 일정인 경우 완료 상태 변경 불가
-    const schedule = schedules.find(s => s.id === id);
-    if(schedule?.isRecurring) {
-      alert("반복 일정의 완료 상태는 변경 할 수 없습니다. 해당 날짜에 대한 예외를 추가해주세요.");
-      return;
-    }
-    
-    // 낙관적 업데이트( 먼저 UI 상태 변경 )
-    const updatedSchedules = schedules.map(schedule => 
-      schedule.id === id 
-          ? { ...schedule, completed: !schedule.completed }
-          : schedule
-    );
-    setSchedules(updatedSchedules);
+  // 반복 일정인 경우 완료 상태 변경 불가
+  const schedule = schedules.find(s => s.id === id);
+  if (schedule?.isRecurring) {
+    alert("반복 일정의 완료 상태는 변경할 수 없습니다. 해당 날짜에 대한 예외를 추가해주세요.");
+    return;
+  }
+  
+  // 낙관적 업데이트(먼저 UI 상태 변경)
+  const updatedSchedules = schedules.map(schedule => 
+    schedule.id === id 
+      ? { ...schedule, completed: !schedule.completed }
+      : schedule
+  );
+  setSchedules(updatedSchedules);
 
-    debouncedUpdateComplete(id);
-  };
+  debouncedUpdateComplete(id);
+};
 
   // 디바운스 함수 생성
   const debouncedUpdateComplete = useCallback(
@@ -489,103 +490,76 @@ const Home = () => {
 
         {schedules.length > 0 ? (
           <ul className="schedule-list">
-            {schedules.map((schedule) => (
-              <li 
-                key={schedule.id} 
-                className={`schedule-item priority-${schedule.priority || 'medium'} ${schedule.completed ? "completed" : ''} ${schedule.recurrencePattern ? "recurring" : ''}`}
-                onClick={(e) => toggleExpandSchedule(schedule.id, e)}
-              >
-                {editingId === schedule.id ? (
-                  // 편집 모드 (반복 일정은 편집 모드에서 제외)
-                  <>
-                    <input
-                      type="text"
-                      value={editedText}
-                      onChange={(e) => setEditedText(e.target.value)}
-                      className="edit-input"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <select 
-                      value={editedPriority} 
-                      onChange={(e) => setEditedPriority(e.target.value)}
-                      className="priority-select"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <option value="high">🔴 높음</option>
-                      <option value="medium">🟡 중간</option>
-                      <option value="low">🔵 낮음</option>
-                    </select>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSaveEdit(schedule.id);
-                      }}
-                    >
-                      ✔️
-                    </button>
-                  </>
-                ) : (
-                  // 보기 모드
-                  <>
-                    <input
-                      type="checkbox"
-                      checked={schedule.completed}
-                      onChange={(e) => handleToggleComplete(schedule.id, e)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <span className="schedule-content">
-                      {schedule.content}
-                      {/* 시간 정보 표시 */}
-                      {schedule.startDate && schedule.endDate && (
-                        <span className="schedule-time">
-                          {" "}
-                          <small className="time-display">
-                            {formatTimeDisplay(schedule.startDate)} - {formatTimeDisplay(schedule.endDate)}
-                          </small>
-                        </span>
-                      )}
-                      {/* 설명이 있으면 아이콘 표시 */}
-                      {schedule.description && 
-                        <span className="has-description-icon" title="설명 보기">📝</span>
-                      }
-                      {schedule.recurrencePattern && (
-                        <span className="recurring-indicator">
-                          🔄 <span className="recurring-pattern">{getRecurrenceLabel(schedule.recurrencePattern)}</span>
-                        </span>
-                      )}
-                    </span>
-                    {/* 반복 일정이 아닐 때만 편집/삭제 버튼 표시 */}
-                    {!schedule.recurrencePattern && (
-                      <div className="button-group">
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditSchedule(schedule.id, schedule.content, schedule.priority);
-                          }}
-                        >
-                          ✏️
-                        </button>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteSchedule(schedule.id);
-                          }}
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
-                
-                {/* 설명 표시 영역 (확장 시에만 표시) */}
-                {expandedScheduleId === schedule.id && schedule.description && (
-                  <div className="schedule-description">
-                    <p>{schedule.description}</p>
-                  </div>
-                )}
-              </li>
-            ))}
+          {schedules.map((schedule) => (
+  <li 
+    key={schedule.id} 
+    className={`schedule-item priority-${schedule.priority || 'medium'} ${schedule.completed ? "completed" : ''} ${schedule.isRecurring ? "recurring" : ''}`}
+    onClick={(e) => toggleExpandSchedule(schedule.id, e)}
+  >
+    {/* 일정 표시 내용 */}
+    <input
+      type="checkbox"
+      checked={schedule.completed || false}
+      onChange={(e) => handleToggleComplete(schedule.id, e)}
+      onClick={(e) => e.stopPropagation()}
+      disabled={schedule.isRecurring} // 반복 일정은 체크박스 비활성화
+    />
+    
+    <span className="schedule-content">
+      {schedule.content}
+      {/* 시간 정보 표시 */}
+      {schedule.startDate && schedule.endDate && (
+        <span className="schedule-time">
+          {" "}
+          <small className="time-display">
+            {formatTimeDisplay(schedule.startDate)} - {formatTimeDisplay(schedule.endDate)}
+          </small>
+        </span>
+      )}
+      
+      {/* 설명이 있으면 아이콘 표시 */}
+      {schedule.description && 
+        <span className="has-description-icon" title="설명 보기">📝</span>
+      }
+      
+      {/* 반복 일정 표시 */}
+      {schedule.isRecurring && (
+        <span className="recurring-indicator">
+          🔄 <span className="recurring-pattern">{getRecurrenceLabel(schedule.patternType)}</span>
+        </span>
+      )}
+    </span>
+    
+    {/* 반복 일정이 아닐 때만 편집/삭제 버튼 표시 */}
+    {!schedule.isRecurring && (
+      <div className="button-group">
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            handleEditSchedule(schedule.id, schedule.content, schedule.priority);
+          }}
+        >
+          ✏️
+        </button>
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDeleteSchedule(schedule.id);
+          }}
+        >
+          🗑️
+        </button>
+      </div>
+    )}
+    
+    {/* 설명 표시 영역 (확장 시에만 표시) */}
+    {expandedScheduleId === schedule.id && schedule.description && (
+      <div className="schedule-description">
+        <p>{schedule.description}</p>
+      </div>
+    )}
+  </li>
+))}
           </ul>
         ) : (
           <div className="empty-schedule">

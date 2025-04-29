@@ -2,13 +2,12 @@ import { useState } from 'react';
 import { createRecurringSchedule } from '../services/RecurringScheduleService';
 import '../styles/RecurringAddForm.css';
 
-
 const RecurringAddForm = ({ onClose, onComplete }) => {
     const [formData, setFormData] = useState({
         content: '',
-        patternType: 'DAILY',  // 변경: 백엔드 API에 맞춰 'DAILY', 'WEEKLY', 'MONTHLY' 등으로 변경
+        patternType: 'DAILY',  
         interval: 1,
-        dayOfWeek: '',
+        daysOfWeek: [], // 변경: dayOfWeek 문자열에서 daysOfWeek 배열로 변경
         dayOfMonth: null,
         weekOfMonth: null,
         startDate: '',
@@ -32,9 +31,15 @@ const RecurringAddForm = ({ onClose, onComplete }) => {
             setFormData(prev => ({
                 ...prev,
                 [name]: value,
-                dayOfWeek: value === 'WEEKLY' ? 'MONDAY' : '',
+                daysOfWeek: value === 'WEEKLY' ? ['MONDAY'] : [], // 변경: 기본값으로 월요일 배열 설정
                 dayOfMonth: value === 'MONTHLY' ? 1 : null,
                 weekOfMonth: null
+            }));
+        } else if (name === 'dayOfWeek') {
+            // 단일 요일 선택 처리
+            setFormData(prev => ({
+                ...prev,
+                daysOfWeek: [value] // 단일 요일을 배열로 변환
             }));
         } else {
             setFormData(prev => ({
@@ -42,6 +47,26 @@ const RecurringAddForm = ({ onClose, onComplete }) => {
                 [name]: value
             }));
         }
+    };
+
+    // 다중 요일 선택 처리 (체크박스 방식)
+    const handleDayOfWeekChange = (day) => {
+        setFormData(prev => {
+            const currentDays = [...prev.daysOfWeek];
+            
+            // 이미 선택된 요일인 경우 제거, 아니면 추가
+            if (currentDays.includes(day)) {
+                return {
+                    ...prev,
+                    daysOfWeek: currentDays.filter(d => d !== day)
+                };
+            } else {
+                return {
+                    ...prev,
+                    daysOfWeek: [...currentDays, day]
+                };
+            }
+        });
     };
 
     // 폼 제출 처리
@@ -59,6 +84,12 @@ const RecurringAddForm = ({ onClose, onComplete }) => {
             return;
         }
 
+        // WEEKLY 패턴이지만 요일을 선택하지 않은 경우
+        if (formData.patternType === 'WEEKLY' && formData.daysOfWeek.length === 0) {
+            setError('주간 반복 패턴에는 최소 하나의 요일을 선택해야 합니다.');
+            return;
+        }
+
         try {
             setLoading(true);
             setError(null);
@@ -73,7 +104,7 @@ const RecurringAddForm = ({ onClose, onComplete }) => {
             
             // patternType에 따라 필요한 필드만 포함
             if (formData.patternType !== 'WEEKLY') {
-                delete requestData.dayOfWeek;
+                delete requestData.daysOfWeek;
             }
             
             if (formData.patternType !== 'MONTHLY') {
@@ -96,21 +127,32 @@ const RecurringAddForm = ({ onClose, onComplete }) => {
         }
     };
 
-    // 요일 옵션 렌더링
-    const renderDayOfWeekOptions = () => {
+    // 요일 선택 UI 랜더링 - 체크박스 방식으로 변경
+    const renderDaysOfWeekSelection = () => {
         const days = [
-            { value: 'MONDAY', label: '월요일' },
-            { value: 'TUESDAY', label: '화요일' },
-            { value: 'WEDNESDAY', label: '수요일' },
-            { value: 'THURSDAY', label: '목요일' },
-            { value: 'FRIDAY', label: '금요일' },
-            { value: 'SATURDAY', label: '토요일' },
-            { value: 'SUNDAY', label: '일요일' }
+            { value: 'MONDAY', label: '월' },
+            { value: 'TUESDAY', label: '화' },
+            { value: 'WEDNESDAY', label: '수' },
+            { value: 'THURSDAY', label: '목' },
+            { value: 'FRIDAY', label: '금' },
+            { value: 'SATURDAY', label: '토' },
+            { value: 'SUNDAY', label: '일' }
         ];
         
-        return days.map(day => (
-            <option key={day.value} value={day.value}>{day.label}</option>
-        ));
+        return (
+            <div className="days-of-week-selection">
+                {days.map(day => (
+                    <label key={day.value} className="day-checkbox">
+                        <input
+                            type="checkbox"
+                            checked={formData.daysOfWeek.includes(day.value)}
+                            onChange={() => handleDayOfWeekChange(day.value)}
+                        />
+                        {day.label}
+                    </label>
+                ))}
+            </div>
+        );
     };
 
     // 월 옵션 렌더링 (1일~31일)
@@ -241,15 +283,8 @@ const RecurringAddForm = ({ onClose, onComplete }) => {
                     {/* 패턴 타입에 따른 추가 필드 */}
                     {formData.patternType === 'WEEKLY' && (
                         <div className="form-group">
-                            <label htmlFor="dayOfWeek">반복 요일</label>
-                            <select
-                                id="dayOfWeek"
-                                name="dayOfWeek"
-                                value={formData.dayOfWeek}
-                                onChange={handleChange}
-                            >
-                                {renderDayOfWeekOptions()}
-                            </select>
+                            <label>반복 요일</label>
+                            {renderDaysOfWeekSelection()}
                         </div>
                     )}
 

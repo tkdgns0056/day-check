@@ -143,3 +143,35 @@
     opacity: 0.6;
     cursor: not-allowed;
 }
+
+/* 요일 체크박스 스타일 */
+.days-of-week-selection {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.day-checkbox {
+    display: flex;
+    align-items: center;
+    background-color: #f5f5f5;
+    padding: 5px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.day-checkbox:hover {
+    background-color: #e0e0e0;
+}
+
+.day-checkbox input {
+    margin-right: 5px;
+    width: auto;
+}
+
+.day-checkbox input:checked + span {
+    font-weight: bold;
+}

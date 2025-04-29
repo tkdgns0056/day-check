@@ -15,6 +15,25 @@ const RecurringDetailModal = ({ schedule, onClose, onUpdate, onDelete }) => {
         color: schedule.color || '#3788d8'
     });
 
+
+    // 요일 정보 표시 부분 수정
+    const formatDaysOfWeek = (daysOfWeek) => {
+    if (!daysOfWeek || daysOfWeek.length === 0) return '';
+    
+    const dayNames = {
+        'MONDAY': '월', 
+        'TUESDAY': '화', 
+        'WEDNESDAY': '수', 
+        'THURSDAY': '목', 
+        'FRIDAY': '금', 
+        'SATURDAY': '토', 
+        'SUNDAY': '일'
+    };
+    
+    return daysOfWeek.map(day => dayNames[day] || day).join(', ');
+};
+
+
     // 수정 후 스케줄 데이터 다시 불러오기
     const refreshScheduleData = async () => {
         try {
@@ -218,6 +237,13 @@ const RecurringDetailModal = ({ schedule, onClose, onUpdate, onDelete }) => {
                                     placeholder="일정 제목을 입력하세요"
                                 />
                             </div>
+
+                            {schedule.patternType === 'WEEKLY' && schedule.daysOfWeek && (
+                            <div className="detail-info-item">
+                                <span className="info-label">반복 요일:</span>
+                                <span className="info-value">{formatDaysOfWeek(schedule.daysOfWeek)}</span>
+                            </div>
+                            )}
 
                             <div className="form-group">
                                 <label htmlFor="description">설명</label>
