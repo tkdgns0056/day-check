@@ -6,7 +6,6 @@ import "../styles/Home.css";
 import "../styles/RecurringSchedule.css";
 import "../styles/RecurringManager.css";
 import RecurringScheduleManager from "./RecurringScheduleManager";
-import { getRecurringSchedulesByDate } from "../services/RecurringScheduleService";
 import { debounce } from "lodash";
 import axios from "axios";
 
@@ -37,7 +36,7 @@ const Home = () => {
   const [endTime, setEndTime] = useState("10:00");   // 기본값 10시
   const [showTimeInputs, setShowTimeInputs] = useState(false); // 시간 입력 표시 여부
 
-  // 날짜가 변경되거나 컴포넌트가 마운트 될 때 알정 로드
+  // 날짜가 변경되거나 컴포넌트가 마운트 될 때 일정 로드
   useEffect(() => {
     console.log("날짜 변경 감지:", formattedDate);
     loadSchedules();
@@ -120,53 +119,33 @@ const Home = () => {
 
   const formattedDate = selectedDate.toISOString().split("T")[0];
 
-
-  // 일정 로드 함수 (일반 일정 + 반복 일정)
-const loadSchedules = async () => {
-  try {
-    // 토큰 가져오기
-    const token = localStorage.getItem('accessToken');
-
-    // 토큰이 있을 경우만 요청에 포함
-    if (!token) {
-      console.error(`인증 토큰이 없습니다.`);
-      return;
-    }
-
-    // 1. 일반 일정 로드
-    const regularSchedulesResponse = await axios.get(
-      `http://localhost:8080/api/schedules/${formattedDate}`,
-      { headers: { 'Authorization': `Bearer ${token}` } }
-    );
-
-    let allSchedules = [...regularSchedulesResponse.data];
-
-    // 2. 반복 일정 로드 - getRecurringSchedulesByDate 함수 사용
+  // 일정 로드 함수 (ScheduleQueryService 활용)
+  const loadSchedules = async () => {
     try {
-      const recurringSchedulesResponse = await getRecurringSchedulesByDate(formattedDate);
+      // 토큰 가져오기
+      const token = localStorage.getItem('accessToken');
 
-      // 반복 일정이 있으면 처리
-      if (recurringSchedulesResponse && recurringSchedulesResponse.length > 0) {
-        // 반복 일정에는 특별한 구분자 추가 (isRecurring)
-        const formattedRecurringSchedules = recurringSchedulesResponse.map(schedule => ({
-          ...schedule,
-          isRecurring: true
-        }));
-
-        // 모든 일정에 추가
-        allSchedules = [...allSchedules, ...formattedRecurringSchedules];
+      // 토큰이 있을 경우만 요청에 포함
+      if (!token) {
+        console.error(`인증 토큰이 없습니다.`);
+        return;
       }
-    } catch (recurringError) {
-      console.error('반복 일정 로드 오류:', recurringError);
+
+      // ScheduleQueryService에 요청하여 모든 일정 로드 (일반 + 반복)
+      const response = await axios.get(
+        `http://localhost:8080/api/schedules/${formattedDate}`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
+
+      // 응답 데이터를 정렬하여 상태 업데이트
+      // 참고: 백엔드에서 이미 정렬된 상태로 오지만, 일관성을 위해 재정렬
+      setSchedules(sortSchedules(response.data));
+
+    } catch (error) {
+      console.error('일정 로드 오류:', error);
     }
+  };
 
-    // 모든 일정 정렬 후 상태 업데이트
-    setSchedules(sortSchedules(allSchedules));
-
-  } catch (error) {
-    console.error('일정 로드 오류:', error);
-  }
-};
   // 일반 일정 등록
   const handleAddSchedule = () => {
     if (newSchedule.trim() === "") return;
@@ -263,32 +242,56 @@ const loadSchedules = async () => {
   };
 
   // 일정 완료 상태 변경을 처리하는 함수
-const handleToggleComplete = (id, e) => {
-  // 이벤트 전파 중지 (설명 토글과 충돌 방지)
-  e.stopPropagation();
+  const handleToggleComplete = (id, e) => {
+    // 이벤트 전파 중지 (설명 토글과 충돌 방지)
+    e.stopPropagation();
 
-  // 반복 일정인 경우 완료 상태 변경 불가
-  const schedule = schedules.find(s => s.id === id);
-  if (schedule?.isRecurring) {
-    alert("반복 일정의 완료 상태는 변경할 수 없습니다. 해당 날짜에 대한 예외를 추가해주세요.");
-    return;
-  }
-  
-  // 낙관적 업데이트(먼저 UI 상태 변경)
-  const updatedSchedules = schedules.map(schedule => 
-    schedule.id === id 
-      ? { ...schedule, completed: !schedule.completed }
-      : schedule
-  );
-  setSchedules(updatedSchedules);
+    // 일정 찾기
+    const schedule = schedules.find(s => s.id === id);
+    
+    // 반복 일정 완료 상태 변경을 위한 API 호출 준비
+    let apiUrl = '';
+    let requestData = {};
+    
+    if (schedule) {
+      if (schedule.id < 0 || schedule.isRecurring) {
+        // 반복 일정인 경우 - CompletionHistoryController의 toggle API 사용
+        apiUrl = 'http://localhost:8080/api/schedules/completion/toggle';
+        requestData = {
+          scheduleId: Math.abs(schedule.id), // 음수 ID를 양수로 변환
+          date: formattedDate,
+          isRecurring: true
+        };
+      } else {
+        // 일반 일정인 경우 - 기존 토글 API 사용
+        apiUrl = `http://localhost:8080/api/schedules/${id}/complete`;
+      }
+    } else {
+      console.error('일정을 찾을 수 없습니다:', id);
+      return;
+    }
+    
+    // 낙관적 업데이트(먼저 UI 상태 변경)
+    const updatedSchedules = schedules.map(schedule => 
+      schedule.id === id 
+        ? { ...schedule, completed: !schedule.completed }
+        : schedule
+    );
+    setSchedules(updatedSchedules);
 
-  debouncedUpdateComplete(id);
-};
+    // 반복 일정인 경우 또는 일반 일정인 경우에 따라 다른 API 호출
+    if (schedule.id < 0 || schedule.isRecurring) {
+      // 반복 일정 완료 상태 토글
+      debouncedUpdateRecurringComplete(apiUrl, requestData, id);
+    } else {
+      // 일반 일정 완료 상태 토글
+      debouncedUpdateComplete(id);
+    }
+  };
 
-  // 디바운스 함수 생성
+  // 디바운스 함수 생성 (일반 일정)
   const debouncedUpdateComplete = useCallback(
     debounce((id) => {
-
       // 토큰 가져오기
       const token = localStorage.getItem('accessToken');
 
@@ -310,12 +313,8 @@ const handleToggleComplete = (id, e) => {
           setSchedules(sortSchedules(updatedSchedules));
         })
         .catch(error => {
-          
-          console.error("토글 오류 전체 정보: ", error);
-          console.error("에러 응답:", error.response);
-          console.error("에러 요청:", error.request);
-          console.error("에러 메시지:", error.message);
-
+          console.error("토글 오류:", error);
+          // 실패 시 원래 상태로 복원
           setSchedules(prevScheules => 
             prevScheules.map(schedule =>
                 schedule.id === id
@@ -329,19 +328,39 @@ const handleToggleComplete = (id, e) => {
     [schedules]
   );
 
-  //   // 완료 상태 토글을 위한 별도 엔드포인트 호출
-  //   axios.patch(`http://localhost:8080/api/schedules/${id}/complete`)
-  //     .then(response => {
-  //       const updatedSchedules = schedules.map(schedule =>
-  //         schedule.id === id ? response.data : schedule
-  //       );
-  //       // 완료 상태 변경 후 다시 정렬
-  //       setSchedules(sortSchedules(updatedSchedules));
-  //     })
-  //     .catch(error => {
-  //       console.log("토글 오류: ", error);
-  //     });
-  // };
+  // 디바운스 함수 생성 (반복 일정)
+  const debouncedUpdateRecurringComplete = useCallback(
+    debounce((url, data, id) => {
+      // 토큰 가져오기
+      const token = localStorage.getItem('accessToken');
+
+      axios.post(url, data, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => {
+        console.log('반복 일정 완료 상태 변경 응답:', response);
+        // 서버 응답 후에도 UI 상태는 이미 변경되었으므로 추가 조치 필요 없음
+        // 필요시 전체 일정을 다시 로드할 수 있음
+        // loadSchedules();
+      })
+      .catch(error => {
+        console.error("반복 일정 토글 오류:", error);
+        // 실패 시 원래 상태로 복원
+        setSchedules(prevScheules => 
+          prevScheules.map(schedule =>
+            schedule.id === id
+              ? { ...schedule, completed: !schedule.completed }
+              : schedule
+          )
+        );
+        alert("반복 일정 상태 변경에 실패했습니다. 다시 시도해주세요.");
+      });
+    }, 300),
+    [schedules]
+  );
 
   // 우선순위별 아이콘
   const getPriorityIcon = (priority) => {
@@ -502,7 +521,6 @@ const handleToggleComplete = (id, e) => {
       checked={schedule.completed || false}
       onChange={(e) => handleToggleComplete(schedule.id, e)}
       onClick={(e) => e.stopPropagation()}
-      disabled={schedule.isRecurring} // 반복 일정은 체크박스 비활성화
     />
     
     <span className="schedule-content">
